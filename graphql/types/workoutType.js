@@ -30,7 +30,7 @@ const WorkoutType = new GraphQLObjectType({
     },
 
     exercises: {
-      type: new GraphQLList(WorkoutExerciseType),
+      type: new GraphQLList(ExerciseType),
       async resolve(parent) {
         return db.WorkoutExercise.findAll({
           where: { workoutId: parent.id },
