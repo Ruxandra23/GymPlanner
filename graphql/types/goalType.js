@@ -1,18 +1,19 @@
 import {
   GraphQLObjectType,
+  GraphQLInputObjectType,
   GraphQLInt,
   GraphQLString,
-  GraphQLFloat,
+  GraphQLNonNull,
+  GraphQLFloat
 } from 'graphql';
 
-import UserType from './userType.js';
+import UserType from './userType.js'; 
 import db from '../../models/index.js';
 
 const GoalType = new GraphQLObjectType({
   name: 'Goal',
   fields: () => ({
     id: { type: GraphQLInt },
-
     title: { type: GraphQLString },
     description: { type: GraphQLString },
     targetValue: { type: GraphQLFloat },
@@ -20,7 +21,6 @@ const GoalType = new GraphQLObjectType({
     unit: { type: GraphQLString },
     deadline: { type: GraphQLString },
     completed: { type: GraphQLInt },
-
     user: {
       type: UserType,
       resolve(parent) {
@@ -30,4 +30,5 @@ const GoalType = new GraphQLObjectType({
   }),
 });
 
-export default GoalType;
+
+export default GoalType; 

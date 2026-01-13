@@ -58,9 +58,11 @@ app.all(
     jwtMiddleware,
     createHandler({
         schema,
-        context: (req) => ({
-            user_id: req.raw.user_id
-        })
+        context: (req) => {
+            return{
+                user_id: req.raw.user_id || req.raw.headers.user_id
+            };
+        }
     })
 );
 

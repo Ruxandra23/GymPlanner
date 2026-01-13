@@ -3,15 +3,16 @@ import {
   GraphQLString,
   GraphQLInt,
   GraphQLFloat,
+  GraphQLNonNull
 } from 'graphql';
 
 const UserInputType = new GraphQLInputObjectType({
   name: 'UserInput',
   fields: {
-    username: { type: GraphQLString },
-    email: { type: GraphQLString },
-    password: { type: GraphQLString },
-    name: { type: GraphQLString },
+    username: { type: new GraphQLNonNull(GraphQLString) },
+    email: { type:new GraphQLNonNull( GraphQLString )},
+    password: { type: new GraphQLNonNull(GraphQLString) },
+    name: { type: new GraphQLNonNull (GraphQLString) },
 
     age: { type: GraphQLInt },
     height: { type: GraphQLFloat },
