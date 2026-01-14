@@ -34,6 +34,7 @@ const jwtMiddleware = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         req.user_id = decoded.user_id;
+        req.user_role = decoded.user_role; // Add role to request
     } catch (err) {
         console.log('Invalid token');
     }
@@ -60,7 +61,8 @@ app.all(
         schema,
         context: (req) => {
             return{
-                user_id: req.raw.user_id || req.raw.headers.user_id
+                user_id: req.raw.user_id,
+                user_role: req.raw.user_role
             };
         }
     })

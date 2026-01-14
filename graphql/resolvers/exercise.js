@@ -1,160 +1,112 @@
 import db from '../../models/index.js';
 
-const { Exercise, Workout, WorkoutExercise } = db;
-
 const exerciseResolvers = {
   Mutation: {
-    /**
-     * Create Exercise Mutation
-     * - Admin check (pentru mai târziu)
-     * - Creează exercise cu name, muscleGroup, difficulty, equipment
-     */
     createExerciseMutation: async (parent, { input }, context) => {
       try {
-        // TODO: Adaugă verificare admin în viitor
-        // if (!context.isAdmin) {
-        //   throw new Error('Doar admin-ii pot crea exerciții');
-        // }
-
-        if (!input.name || !input.muscleGroup || !input.difficulty) {
-          throw new Error('Name, muscleGroup și difficulty sunt obligatorii');
+        // Admin check
+        if (!context.user_id) {
+          throw new Error("Trebuie să fii logat pentru a crea un exercițiu");
+        }
+        
+        if (context.user_role !== 'admin') {
+          throw new Error("Doar adminii pot crea exerciții noi");
         }
 
-        const exercise = await Exercise.create({
-          name: input.name,
-          description: input.description || null,
-          muscleGroup: input.muscleGroup,
-          difficulty: input.difficulty,
-          equipment: input.equipment || null,
-          videoUrl: input.videoUrl || null,
-        });
+        const exercise = await db.Exercise.create(input);
 
-        console.log('Exercise created:', exercise.name);
+        console.log("✅ Exercise created:", exercise.id);
         return exercise;
-      } catch (err) {
-        throw new Error(`Eroare la crearea exercițiului: ${err.message}`);
+      } catch (error) {
+        console.log("--- CREATE EXERCISE ERROR ---");
+        console.log(error);
+        const detailedError = error.errors 
+          ? error.errors.map(e => e.message).join(', ') 
+          : error.message;
+        throw new Error("Eroare la crearea exercițiului: " + detailedError);
       }
     },
 
-    /**
-     * Add Exercise To Workout Mutation
-     * - Primește: workoutId, exerciseId, sets, reps, weight, restTime, order
-     * - Validare: check owner workout
-     * - Adaugă exercise prin WorkoutExercise cu detalii
-     */
     addExerciseToWorkoutMutation: async (parent, { input }, context) => {
       try {
+        // Check if user is authenticated
         if (!context.user_id) {
-          throw new Error('Trebuie să fii logat pentru a adauga exerciții la workout');
+          throw new Error("Trebuie să fii logat pentru a adăuga exerciții la workout");
         }
 
-        if (
-          !input.workoutId ||
-          !input.exerciseId ||
-          input.sets === undefined ||
-          input.reps === undefined ||
-          input.order === undefined
-        ) {
-          throw new Error(
-            'workoutId, exerciseId, sets, reps și order sunt obligatorii'
-          );
-        }
+        // Find workout
+        const workout = await db.Workout.findByPk(input.workoutId);
 
-        // Verifică dacă workout-ul aparține user-ului
-        const workout = await Workout.findByPk(input.workoutId);
         if (!workout) {
-          throw new Error('Workout-ul nu a fost găsit');
+          throw new Error("Workout-ul nu a fost găsit");
         }
 
+        // Check ownership
         if (workout.userId !== context.user_id) {
-          throw new Error('Nu poți adauga exerciții la un workout al altuia');
+          throw new Error("Nu ai permisiunea de a adăuga exerciții la acest workout");
         }
 
-        // Verifică dacă exercițiul există
-        const exercise = await Exercise.findByPk(input.exerciseId);
+        // Check if exercise exists
+        const exercise = await db.Exercise.findByPk(input.exerciseId);
+
         if (!exercise) {
-          throw new Error('Exercițiul nu a fost găsit');
+          throw new Error("Exercițiul nu a fost găsit");
         }
 
-        // Creează asocierea
-        const workoutExercise = await WorkoutExercise.create({
+        // Add exercise to workout
+        const workoutExercise = await db.WorkoutExercise.create({
           workoutId: input.workoutId,
           exerciseId: input.exerciseId,
-          sets: input.sets,
-          reps: input.reps,
+          sets: input.sets || 3,
+          reps: input.reps || 10,
           weight: input.weight || null,
           restTime: input.restTime || null,
-          order: input.order,
+          order: input.order || 1,
         });
 
-        console.log(
-          'Exercise added to workout:',
-          exercise.name,
-          'to',
-          workout.name
-        );
+        console.log("✅ Exercise added to workout:", workoutExercise.id);
         return workoutExercise;
-      } catch (err) {
-        throw new Error(
-          `Eroare la adaugarea exercițiului la workout: ${err.message}`
-        );
+      } catch (error) {
+        console.log("--- ADD EXERCISE TO WORKOUT ERROR ---");
+        console.log(error);
+        throw new Error("Eroare la adăugarea exercițiului: " + error.message);
       }
     },
 
-    /**
-     * Remove Exercise From Workout Mutation
-     * - Șterge exercițiul din workout (WorkoutExercise record)
-     */
-    removeExerciseFromWorkoutMutation: async (parent, { input }, context) => {
+    removeExerciseFromWorkoutMutation: async (parent, { workoutExerciseId }, context) => {
       try {
+        // Check if user is authenticated
         if (!context.user_id) {
-          throw new Error(
-            'Trebuie să fii logat pentru a șterge exerciții din workout'
-          );
+          throw new Error("Trebuie să fii logat pentru a remove exerciții din workout");
         }
 
-        if (!input.workoutId || !input.exerciseId) {
-          throw new Error('workoutId și exerciseId sunt obligatorii');
+        // Find workout exercise
+        const workoutExercise = await db.WorkoutExercise.findByPk(workoutExerciseId);
+
+        if (!workoutExercise) {
+          throw new Error("Exercițiul nu a fost găsit în workout");
         }
 
-        // Verifică dacă workout-ul aparține user-ului
-        const workout = await Workout.findByPk(input.workoutId);
+        // Find workout and check ownership
+        const workout = await db.Workout.findByPk(workoutExercise.workoutId);
+
         if (!workout) {
-          throw new Error('Workout-ul nu a fost găsit');
+          throw new Error("Workout-ul nu a fost găsit");
         }
 
         if (workout.userId !== context.user_id) {
-          throw new Error('Nu poți șterge exerciții din un workout al altuia');
+          throw new Error("Nu ai permisiunea de a remove exerciții din acest workout");
         }
 
-        // Găsește și șterge asocierea
-        const workoutExercise = await WorkoutExercise.findOne({
-          where: {
-            workoutId: input.workoutId,
-            exerciseId: input.exerciseId,
-          },
-        });
-
-        if (!workoutExercise) {
-          throw new Error(
-            'Exercițiul nu a fost găsit în acest workout'
-          );
-        }
-
-        const exercise = await Exercise.findByPk(input.exerciseId);
+        // Delete workout exercise
         await workoutExercise.destroy();
 
-        console.log(
-          'Exercise removed from workout:',
-          exercise.name,
-          'from',
-          workout.name
-        );
+        console.log("✅ Exercise removed from workout:", workoutExerciseId);
         return workoutExercise;
-      } catch (err) {
-        throw new Error(
-          `Eroare la ștergerea exercițiului din workout: ${err.message}`
-        );
+      } catch (error) {
+        console.log("--- REMOVE EXERCISE FROM WORKOUT ERROR ---");
+        console.log(error);
+        throw new Error("Eroare la ștergerea exercițiului: " + error.message);
       }
     },
   },

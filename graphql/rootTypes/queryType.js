@@ -16,7 +16,7 @@ const queryType = new GraphQLObjectType({
         hello: {
             type: GraphQLString,
             resolve: () => {
-                return 'Hello from Gym Planner API 👋';
+                return 'Hello from Gym Planner API ';
             }
         },
         users:{
@@ -48,13 +48,19 @@ const queryType = new GraphQLObjectType({
             type: new GraphQLList(ExerciseType),
             args: {
                 muscleGroup: {type: GraphQLString} , 
-                difficulty: {type : GraphQLString}
+                difficulty: {type : GraphQLString},
+                limit: {type: GraphQLInt},
+                offset: {type: GraphQLInt}
             } ,
-            resolve: (_ , {muscleGroup,difficulty})=> {
+            resolve: (_ , {muscleGroup, difficulty, limit, offset})=> {
                 const whereClause = {};
                 if(muscleGroup) whereClause.muscleGroup = muscleGroup;
                 if(difficulty) whereClause.difficulty = difficulty;
-                return db.Exercise.findAll({where: whereClause});
+                return db.Exercise.findAll({
+                    where: whereClause,
+                    limit: limit || 10,
+                    offset: offset || 0
+                });
             }
         },
         workoutQuery:{

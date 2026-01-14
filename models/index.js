@@ -9,6 +9,7 @@ import initProgress from './progress.js';
 import initGoal from './goal.js';
 import initFavorite from './favorite.js';
 import initWorkoutSession from './workoutsession.js';
+import initUserProfile from './userprofile.js';
 
 const env = process.env.NODE_ENV || 'development';
 const config = configFile[env];
@@ -25,6 +26,7 @@ models.Progress = initProgress(sequelize, Sequelize.DataTypes);
 models.Goal = initGoal(sequelize, Sequelize.DataTypes);
 models.Favorite = initFavorite(sequelize, Sequelize.DataTypes);
 models.WorkoutSession = initWorkoutSession(sequelize, Sequelize.DataTypes);
+models.UserProfile = initUserProfile(sequelize, Sequelize.DataTypes);
 
 // Rulează asocierile
 Object.values(models).forEach((model) => {

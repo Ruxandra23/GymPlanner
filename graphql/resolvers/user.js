@@ -1,109 +1,72 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../../constants.js';
 import db from '../../models/index.js';
-
-const { User } = db;
+import { JWT_SECRET } from '../../constants.js';
 
 const userResolvers = {
   Mutation: {
-    /**
-     * Create User Mutation
-     * - Hash password cu bcrypt
-     * - Creează user cu age, height, weight, goal
-     * - Returnează user (fără password)
-     */
-    createUserMutation: async (parent, { input }, context) => {
+    createUserMutation: async (parent, { input }) => {
       try {
-        // Validare
-        if (!input.username || !input.email || !input.password || !input.name) {
-          throw new Error('Username, email, password și name sunt obligatorii');
-        }
-
-        // Verifică dacă username/email deja exist
-        const existingUser = await User.findOne({
-          where: { username: input.username },
-        });
-        if (existingUser) {
-          throw new Error('Username-ul este deja folosit');
-        }
-
-        const existingEmail = await User.findOne({
-          where: { email: input.email },
-        });
-        if (existingEmail) {
-          throw new Error('Email-ul este deja folosit');
-        }
-
         // Hash password
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(input.password, saltRounds);
+        const hashedPassword = await bcrypt.hash(input.password, 10);
 
-        // Creează user
-        const user = await User.create({
-          username: input.username,
-          email: input.email,
+        // Create user with hashed password
+        const user = await db.User.create({
+          ...input,
           password: hashedPassword,
-          name: input.name,
-          age: input.age || null,
-          height: input.height || null,
-          weight: input.weight || null,
-          goal: input.goal || 'maintain',
         });
 
-        console.log('User created:', user.username);
+        console.log("✅ Mutations created - createUserMutation works");
+        console.log("User created:", user.id);
         return user;
-      } catch (err) {
-        throw new Error(`Eroare la crearea user-ului: ${err.message}`);
+      } catch (error) {
+        console.log("--- CREATE USER ERROR ---");
+        console.log(error);
+        const detailedError = error.errors 
+          ? error.errors.map(e => e.message).join(', ') 
+          : error.message;
+        throw new Error("Eroare la crearea utilizatorului: " + detailedError);
       }
     },
 
-    /**
-     * Login Mutation
-     * - Verifică user + password
-     * - Returnează JWT token + user
-     */
-    loginMutation: async (parent, { credentials }, context) => {
+    loginMutation: async (parent, { credentials }) => {
       try {
-        // Validare
-        if (!credentials.username || !credentials.password) {
-          throw new Error('Username și password sunt obligatorii');
-        }
-
-        // Găsește user
-        const user = await User.findOne({
+        // Find user by username
+        const user = await db.User.findOne({
           where: { username: credentials.username },
         });
 
         if (!user) {
-          throw new Error('User-ul nu a fost găsit');
+          throw new Error("Utilizator not found");
         }
 
-        // Verifică password
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        // Compare passwords
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
-        if (!passwordMatch) {
-          throw new Error('Password incorect');
+        if (!isPasswordValid) {
+          throw new Error("Password incorect");
         }
 
-        // Generează JWT token
+        // Generate JWT token
         const token = jwt.sign(
-          { user_id: user.id, username: user.username },
+          { user_id: user.id, username: user.username, user_role: user.role },
           JWT_SECRET,
-          { expiresIn: '24h' }
+          { expiresIn: '7d' }
         );
 
-        console.log('Login successful for user:', user.username);
-
+        console.log("✅ Mutations created - loginMutation works");
+        console.log("User logged in:", user.id);
         return {
           token,
           user,
         };
-      } catch (err) {
-        throw new Error(`Eroare la login: ${err.message}`);
+      } catch (error) {
+        console.log("--- LOGIN ERROR ---");
+        console.log(error);
+        const detailedError = error.errors 
+          ? error.errors.map(e => e.message).join(', ') 
+          : error.message;
+        throw new Error("Eroare la login: " + detailedError);
       }
     },
   },

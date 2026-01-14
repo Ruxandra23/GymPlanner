@@ -4,7 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "testTimeout": 30000,
+    "setupFilesAfterEnv": [
+      "<rootDir>/__tests__/setup.js"
+    ]
   },
   "keywords": [],
   "author": "",
@@ -22,6 +32,11 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "sequelize-cli": "^6.6.5"
+    "@faker-js/faker": "^10.2.0",
+    "@types/jest": "^30.0.0",
+    "cross-env": "^10.1.0",
+    "jest": "^30.2.0",
+    "sequelize-cli": "^6.6.5",
+    "supertest": "^7.2.2"
   }
 }

@@ -1,17 +1,11 @@
-
-import {
-  GraphQLObjectType,
-  GraphQLInt,
-  GraphQLString,
-  GraphQLList,
-} from 'graphql';
-
-import UserType from './userType.js';
-import ExerciseType from './exerciseType.js';
-import WorkoutExerciseType from './workoutExerciseType.js';
-import WorkoutSessionType from './workoutSessionType.js';
-
-import db from '../../models/index.js';
+const { 
+  GraphQLObjectType, 
+  GraphQLInt, 
+  GraphQLString, 
+  GraphQLList 
+} = require('graphql');
+const WorkoutExerciseType = require('./workoutExerciseType');
+const sequelize = require('../../config/database');
 
 const WorkoutType = new GraphQLObjectType({
   name: 'Workout',
@@ -21,35 +15,24 @@ const WorkoutType = new GraphQLObjectType({
     description: { type: GraphQLString },
     difficulty: { type: GraphQLString },
     duration: { type: GraphQLInt },
-
-    user: {
-      type: UserType,
-      resolve(parent) {
-        return db.User.findByPk(parent.userId);
-      },
-    },
-
-    exercises: {
-      type: new GraphQLList(ExerciseType),
-      async resolve(parent) {
-        return db.WorkoutExercise.findAll({
+    userId: { type: GraphQLInt },
+    
+    workoutExercises: {
+      type: new GraphQLList(WorkoutExerciseType),
+      resolve: async (parent) => {
+        return await sequelize.models.WorkoutExercise.findAll({
           where: { workoutId: parent.id },
-          include: [{ model: db.Exercise }],
-          order: [['order', 'ASC']],
+          include: [
+            {
+              model: sequelize.models.Exercise,
+              as: 'exercise',  
+              attributes: ['id', 'name', 'muscleGroup', 'difficulty', 'equipment']
+            }
+          ]
         });
-      },
-    },
-
-    sessions: {
-      type: new GraphQLList(WorkoutSessionType),
-      resolve(parent) {
-        return db.WorkoutSession.findAll({
-          where: { workoutId: parent.id },
-          order: [['startTime', 'DESC']],
-        });
-      },
-    },
-  }),
+      }
+    }
+  })
 });
 
-export default WorkoutType;
+module.exports = WorkoutType;

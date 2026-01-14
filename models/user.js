@@ -52,6 +52,12 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.ENUM('gain', 'lose', 'maintain'),
         allowNull: true,
       },
+
+      role: {
+        type: DataTypes.ENUM('admin', 'user'),
+        allowNull: false,
+        defaultValue: 'user',
+      },
     },
     {
       tableName: 'Users',
@@ -81,6 +87,11 @@ export default (sequelize, DataTypes) => {
     });
 
     User.hasMany(models.WorkoutSession, {
+      foreignKey: 'userId',
+      onDelete: 'CASCADE',
+    });
+
+    User.hasOne(models.UserProfile, {
       foreignKey: 'userId',
       onDelete: 'CASCADE',
     });
