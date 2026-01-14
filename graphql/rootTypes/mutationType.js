@@ -48,7 +48,17 @@ const mutationType = new GraphQLObjectType({
       args: {
         input: { type: new GraphQLNonNull(UserInputType) }
       },
-      resolve: userResolvers.Mutation.createUserMutation
+      resolve: async (parent, { input }) => {
+      try {
+        return await db.User.create(input);
+      } catch (error) {
+        console.log("--- EROARE DETALIATA SEQUELIZE ---");
+        console.log(error);
+        console.log("----------------------------------");
+        const detailedError = error.errors ? error.errors.map(e => e.message).join(', ') : error.message;
+        throw new Error("Eroare: " + detailedError);
+      }
+    }
     },
 
     loginMutation: {
@@ -64,13 +74,13 @@ const mutationType = new GraphQLObjectType({
             type: UserType,
             resolve: async (parent, args, context) => {
               if (!context.user_id) {
-                throw new Error("Trebuie să fii logat pentru a-ți șterge contul.");
+                throw new Error("Trebuie sa fii logat pentru a-ti sterge contul.");
               }
 
               const user = await db.User.findByPk(context.user_id);
 
               if (!user) {
-                throw new Error("User-ul nu a fost găsit.");
+                throw new Error("User-ul nu a fost gasit.");
               }
               await user.destroy();
 

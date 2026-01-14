@@ -7,6 +7,8 @@ const userResolvers = {
   Mutation: {
     createUserMutation: async (parent, { input }) => {
       try {
+        console.log("Input primit:", input);
+
         // Hash password
         const hashedPassword = await bcrypt.hash(input.password, 10);
 
@@ -16,15 +18,36 @@ const userResolvers = {
           password: hashedPassword,
         });
 
-        console.log("✅ Mutations created - createUserMutation works");
+        console.log("Mutations created - createUserMutation works");
         console.log("User created:", user.id);
         return user;
       } catch (error) {
         console.log("--- CREATE USER ERROR ---");
-        console.log(error);
-        const detailedError = error.errors 
-          ? error.errors.map(e => e.message).join(', ') 
-          : error.message;
+        console.log("Error object:", error);
+        console.log("Error name:", error.name);
+        console.log("Error message:", error.message);
+        console.log("Error fields:", error.fields);
+        console.log("Error parent:", error.parent);
+        console.log("Error errors:", error.errors);
+        
+        let detailedError = error.message || "Eroare necunoscuta";
+        
+        // Handle Sequelize validation errors
+        if (error.errors && Array.isArray(error.errors)) {
+          detailedError = error.errors.map(e => `${e.path}: ${e.message}`).join('; ');
+        }
+        
+        // Handle Sequelize constraint errors
+        if (error.name === 'SequelizeUniqueConstraintError') {
+          if (error.fields && Object.keys(error.fields).length > 0) {
+            const fields = Object.keys(error.fields).join(', ');
+            detailedError = `${fields} deja existent in baza de date`;
+          } else {
+            detailedError = error.parent?.message || "Constraint unic incalcat";
+          }
+        }
+        
+        console.log("Final error message:", detailedError);
         throw new Error("Eroare la crearea utilizatorului: " + detailedError);
       }
     },
@@ -54,7 +77,7 @@ const userResolvers = {
           { expiresIn: '7d' }
         );
 
-        console.log("✅ Mutations created - loginMutation works");
+        console.log("Mutations created - loginMutation works");
         console.log("User logged in:", user.id);
         return {
           token,

@@ -1,10 +1,11 @@
-const { 
-  GraphQLObjectType, 
-  GraphQLInt, 
-  GraphQLFloat 
-} = require('graphql');
-const ExerciseType = require('./exerciseType');
-const sequelize = require('../../config/database');
+import {
+  GraphQLObjectType,
+  GraphQLInt,
+  GraphQLFloat,
+} from 'graphql';
+
+import ExerciseType from './exerciseType.js';
+import db from '../../models/index.js';
 
 const WorkoutExerciseType = new GraphQLObjectType({
   name: 'WorkoutExercise',
@@ -15,20 +16,19 @@ const WorkoutExerciseType = new GraphQLObjectType({
     weight: { type: GraphQLFloat },
     workoutId: { type: GraphQLInt },
     exerciseId: { type: GraphQLInt },
-    
+
     exercise: {
       type: ExerciseType,
-      resolve: async (parent) => {
-        
+      resolve(parent) {
+
         if (parent.exercise) {
           return parent.exercise;
         }
-        
-       
-        return await sequelize.models.Exercise.findByPk(parent.exerciseId);
-      }
-    }
-  })
+
+        return db.Exercise.findByPk(parent.exerciseId);
+      },
+    },
+  }),
 });
 
-module.exports = WorkoutExerciseType;
+export default WorkoutExerciseType;

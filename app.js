@@ -9,63 +9,66 @@ import { JWT_SECRET } from './constants.js';
 
 const app = express();
 
-/**
- * 1. Construim schema GraphQL explicit
- */
+// 1. Construct the GraphQL schema
 const schema = new GraphQLSchema({
-    query: queryType,
-    mutation: mutationType
+  query: queryType,
+  mutation: mutationType,
 });
 
-/**
- * 2. Middleware JWT
- * - extrage tokenul
- * - decodează user_id
- * - NU blochează requestul (doar atașează user)
- */
+// 2. JWT Middleware
+// - Extracts token from Authorization header
+// - Decodes user_id and user_role
+// - Does NOT block the request (just attaches data for the context)
 const jwtMiddleware = (req, res, next) => {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+  const authHeader = req.headers.authorization;
 
-    if (!token) {
-        next();
-        return;
-    }
+  // Extract token if it starts with "Bearer "
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.replace('Bearer ', '')
+    : null;
 
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user_id = decoded.user_id;
-        req.user_role = decoded.user_role; // Add role to request
-    } catch (err) {
-        console.log('Invalid token');
-    }
+  if (!token) {
+    return next();
+  }
 
-    next();
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user_id = decoded.user_id;
+    req.user_role = decoded.user_role;
+    
+    // Log for debugging
+    console.log(`[Middleware] Token validated. UserID: ${req.user_id}, Role: ${req.user_role}`);
+  } catch (err) {
+    console.log('[Middleware] Invalid JWT token:', err.message);
+  }
+
+  next();
 };
 
-/**
- * 3. Endpoint simplu (debug)
- */
+// 3. Simple debug endpoint
 app.get('/', (req, res) => {
-    res.send('Gym Planner API running');
+  res.send('Gym Planner API running');
 });
 
-/**
- * 4. Endpoint GraphQL
- * - atașăm jwtMiddleware
- * - creăm contextul
- */
+// 4. GraphQL Endpoint
+// - Apply jwtMiddleware
+// - Construct the context correctly passing user data
 app.all(
-    '/graphql',
-    jwtMiddleware,
-    createHandler({
-        schema,
-        context: (req) => {
-            return{
-                user_id: req.raw.user_id,
-                user_role: req.raw.user_role
-            };
-        }
-    })
+  '/graphql',
+  jwtMiddleware,
+  createHandler({
+    schema,
+    context: (req) => {
+      // Ensure we access the modified request object containing user_id
+      // graphql-http sometimes wraps the request in 'raw'
+      const actualRequest = req.raw || req;
+
+      return {
+        user_id: actualRequest.user_id,
+        user_role: actualRequest.user_role,
+      };
+    },
+  })
 );
 
 export default app;

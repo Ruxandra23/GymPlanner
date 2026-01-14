@@ -1,3 +1,5 @@
+import bcrypt from 'bcrypt'; 
+
 export default (sequelize, DataTypes) => {
   const User = sequelize.define(
     'User',
@@ -64,6 +66,12 @@ export default (sequelize, DataTypes) => {
       timestamps: true,
     }
   );
+
+  
+    User.beforeCreate(async (user) => {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(user.password, salt);
+    });
 
   User.associate = (models) => {
     User.hasMany(models.Workout, {

@@ -1,15 +1,15 @@
-const {
+import {
   GraphQLObjectType,
   GraphQLInt,
   GraphQLString,
   GraphQLList,
-} = require('graphql');
+} from 'graphql';
 
-const WorkoutType = require('./workoutType');
-const ProgressType = require('./progressType');
-const FavoriteType = require('./favoriteType');
+import WorkoutType from './workoutType.js';
+import ProgressType from './progressType.js';
+import FavoriteType from './favoriteType.js';
 
-const db = require('../../models/index');
+import db from '../../models/index.js';
 
 const ExerciseType = new GraphQLObjectType({
   name: 'Exercise',
@@ -49,4 +49,4 @@ const ExerciseType = new GraphQLObjectType({
   }),
 });
 
-module.exports = ExerciseType;
+export default ExerciseType;

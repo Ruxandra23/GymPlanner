@@ -15,6 +15,7 @@ export default (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     description: DataTypes.TEXT,
     difficulty: DataTypes.STRING,
+    duration: DataTypes.INTEGER,
     userId: DataTypes.INTEGER
   }, {
     sequelize,

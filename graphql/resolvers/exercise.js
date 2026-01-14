@@ -15,7 +15,7 @@ const exerciseResolvers = {
 
         const exercise = await db.Exercise.create(input);
 
-        console.log("✅ Exercise created:", exercise.id);
+        console.log("Exercise created:", exercise.id);
         return exercise;
       } catch (error) {
         console.log("--- CREATE EXERCISE ERROR ---");
@@ -101,7 +101,7 @@ const exerciseResolvers = {
         // Delete workout exercise
         await workoutExercise.destroy();
 
-        console.log("✅ Exercise removed from workout:", workoutExerciseId);
+        console.log("Exercise removed from workout:", workoutExerciseId);
         return workoutExercise;
       } catch (error) {
         console.log("--- REMOVE EXERCISE FROM WORKOUT ERROR ---");
